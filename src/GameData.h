@@ -31,7 +31,7 @@ typedef struct _Game {
     unsigned int** endStatus;
     
     // get the size of the game range
-    unsigned int (*getSize) (void);
+    unsigned int (*getSize) (struct _Game*);
     // proceed to the next step
     void (*nextStep) (struct _Game*);
     // release any resource allocated
@@ -46,6 +46,6 @@ Game* restoreGame(FILE* file);
 // values other than 0 are valid for width and height
 Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps);
 // release resources that allocated for the game
-void detatchGame(Game* game);
+void detachGame(Game* game);
 
 #endif

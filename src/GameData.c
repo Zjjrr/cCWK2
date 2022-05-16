@@ -4,6 +4,10 @@
 #include "cJSON.h"
 #include "GameData.h"
 
+static unsigned int _getSize_(Game* game);
+
+static void _nextStep_(Game* game);
+
 int storeGame(Game* game, FILE* file) {
     cJSON* json_root = NULL;
     cJSON* json_array_initial = NULL;
@@ -25,15 +29,15 @@ int storeGame(Game* game, FILE* file) {
 
     json_array_initial = cJSON_CreateArray();
     for (int i = 0; i < game -> height; i++) {
-        json_array_temp = cJSON_CreateIntArray((int*) (*(game -> initialStatus) + i * (game -> width)), game -> width);
+        json_array_temp = cJSON_CreateIntArray((int*) (*(game -> initialStatus + i)), game -> width);
         cJSON_AddItemToArray(json_array_initial, json_array_temp);
     }
     cJSON_AddItemToObject(json_root, KEY_INITIAL_STATUS, json_array_initial);
     
     json_array_end = cJSON_CreateArray();
     for (int i = 0; i < game -> height; i++) {
-        json_array_temp = cJSON_CreateIntArray((int*) (*(game -> endStatus) + i * (game -> width)), game -> width);
-        cJSON_AddItemToArray(json_array_initial, json_array_temp);
+        json_array_temp = cJSON_CreateIntArray((int*) (*(game -> endStatus + i)), game -> width);
+        cJSON_AddItemToArray(json_array_end, json_array_temp);
     }
     cJSON_AddItemToObject(json_root, KEY_END_STATUS, json_array_end);
     
@@ -121,10 +125,54 @@ Game* restoreGame(FILE* file) {
 
 Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps) {
     Game* game = NULL;
+    unsigned int** tmp = NULL;
     
     if (width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT)
         // parameters are invalid
         return NULL;
         
-    // TODO: Create game dynamically based on parameters
+    // Create game dynamically based on parameters
+    game = (Game*) malloc(sizeof(Game));
+    game -> width = width;
+    game -> height = height;
+    game -> currentStep = 0;
+    game -> totalStep = totalSteps;
+    game -> initialStatus = (unsigned int**) malloc(height * sizeof(unsigned int*));
+    for (int i = 0; i < height; i++) {
+        tmp = (game -> initialStatus) + i;
+        *tmp = (unsigned int*) malloc(width * sizeof(unsigned int));
+        memset(*tmp, 0, width * sizeof(unsigned int));
+    }
+    game -> endStatus = (unsigned int**) malloc(height *sizeof(unsigned int*));
+    for (int i = 0; i < height; i++) {
+        tmp = (game -> endStatus) + i;
+        *tmp = (unsigned int*) malloc(width * sizeof(unsigned int));
+        memset(*tmp, 0, sizeof(unsigned int));
+    }
+    game -> getSize = &(_getSize_);
+    game -> nextStep = &(_nextStep_);
+    game -> release = &(detachGame);
+    
+    return game;
+}
+
+void detachGame(Game* game) {
+    if (!game)
+        exit(-1);
+    
+    for (int i = 0; i < game -> height; i++) {
+        free(*(game -> initialStatus + i));
+        free(*(game -> endStatus + i));
+    }
+    free(game -> initialStatus);
+    free(game -> endStatus);
+    free(game);
+}
+
+static unsigned int _getSize_(Game* game) {
+    return (unsigned int) (game -> width * game -> height);
+}
+
+static void _nextStep_(Game* game) {
+    // TODO: Implement game logic
 }

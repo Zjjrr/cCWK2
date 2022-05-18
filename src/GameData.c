@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "cJSON.h"
 #include "GameData.h"
 
@@ -116,6 +117,10 @@ Game* restoreGame(FILE* file) {
     }
     game -> endStatus = status;
     
+    game -> getSize = _getSize_;
+    game -> nextStep = _nextStep_;
+    game -> release = detachGame;
+    
     // release resources allocated
     free(buf);
     cJSON_Delete(json);
@@ -149,9 +154,9 @@ Game* createGame(unsigned int width, unsigned int height, unsigned int totalStep
         *tmp = (unsigned int*) malloc(width * sizeof(unsigned int));
         memset(*tmp, 0, sizeof(unsigned int));
     }
-    game -> getSize = &(_getSize_);
-    game -> nextStep = &(_nextStep_);
-    game -> release = &(detachGame);
+    game -> getSize = _getSize_;
+    game -> nextStep = _nextStep_;
+    game -> release = detachGame;
     
     return game;
 }
@@ -174,5 +179,29 @@ static unsigned int _getSize_(Game* game) {
 }
 
 static void _nextStep_(Game* game) {
-    // TODO: Implement game logic
+    static int delta[] = {-1, 0, 1};
+    unsigned int** status = NULL;
+    int alive = 0, x = 0, y = 0;
+    
+    status = game -> endStatus;
+    for (int i = 0; i < game -> height; i++) {
+        for (int j = 0; j < game -> width; j++) {
+            alive = 0;
+            for (int k = 0; k < 3; k++) {
+                y = i + delta[k];
+                for (int l = 0; l < 3; l++) {
+                    x = j + delta[l];
+                    // Check if the neighbor is out of range
+                    if (x >= 0 && x < game -> width 
+                        && y >= 0 && y < game -> height)
+                        alive += *(*(status + y) + x);
+                }
+            }
+            // Change the state of the current cell
+            if (alive == 3)
+                *(*(status + i) + j) = (unsigned int) SYMBOL_LIVE;
+            else if (alive != 2)
+                *(*(status + i) + j) = (unsigned int) SYMBOL_DEAD;
+        }
+    }
 }

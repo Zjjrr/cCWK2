@@ -6,27 +6,29 @@ lib_cjson := $(lib_dir)/cJSON
 
 CC := gcc
 CFLAGS := -Wall -O -Wno-unused-result -I$(lib_cjson)
-LDFLAGS := 
+LIBS := -lSDL2 -lSDL2_image
 MAKE := make
 
-exe_files := game
-src_files := Game.c GameData.c main.c 
-obj_files := $(addsuffix .o,$(basename $(src_files)))
-obj_files += cJSON.o
+EXE := game
+SRC := Game.c GameData.c main.c
+OBJ := $(SRC:.c=.o)
 
-.PHONY: all game clean
-all: $(exe_files)
-game: lib_cjson
-	cd $(src_dir); \
-	$(CC) -c $(CFLAGS) $(src_files); \
-	$(CC) -o $(LDFLAGS) game $(obj_files)
+
+.PHONY: all $(EXE) clean
+
+.c.o:
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(EXE): $(OBJ) lib_cjson
+	$(CC) $(OBJ) cJSON.o -o $(EXE) $(LIBS)
+	
 lib_cjson:
 	cd $(lib_cjson); \
 	$(MAKE); \
-	cp $(lib_cjson)/cJSON.o $(src_dir)
+	cp $(lib_cjson)/cJSON.o $(CURDIR)
+	
 clean:
-	cd $(src_dir); \
-	rm -rf *.o; \
-	rm -rf $(exe_files)
+	rm -rf *.o
+	rm -rf $(EXE)
 	cd $(lib_cjson); \
 	make clean

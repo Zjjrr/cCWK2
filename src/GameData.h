@@ -8,8 +8,8 @@
 #define KEY_INITIAL_STATUS "inital_status"
 #define KEY_END_STATUS "end_status"
 
-#define SYMBOL_LIVE 0
-#define SYMBOL_DEAD 1
+#define SYMBOL_LIVE 1
+#define SYMBOL_DEAD 0
 
 #define MAX_WIDTH 512
 #define MAX_HEIGHT 512

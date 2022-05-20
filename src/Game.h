@@ -5,6 +5,8 @@
 
 #include "GameData.h"
 
+#define APP_TITLE "Game of Life"
+
 typedef struct _GameConfig {
     Game* game; // Game Data
     char* file; // Archive location
@@ -20,5 +22,6 @@ void init();
 void input();
 void update();
 void render();
+void quit();
 
 #endif

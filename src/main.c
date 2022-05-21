@@ -4,8 +4,20 @@
 #include "Game.h"
 
 int main(int argc, char** argv) {
-    load("stored01.dat");
+    GameConfig* config = NULL;
+
+    // for test
+    config = load("stored01.dat");
     init();
-    getchar();
+    render();
+
+    // game loop
+    while(1) {
+        input();
+        update();
+        render();
+        SDL_Delay(config -> game -> delay);
+    }
+    
     return 0;
 }

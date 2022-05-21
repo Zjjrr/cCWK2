@@ -7,6 +7,7 @@
 #define KEY_TOTAL_STEPS "total_steps"
 #define KEY_INITIAL_STATUS "inital_status"
 #define KEY_END_STATUS "end_status"
+#define KEY_DELAY "delay"
 
 #define SYMBOL_LIVE 1
 #define SYMBOL_DEAD 0
@@ -25,6 +26,8 @@ typedef struct _Game {
     unsigned int currentStep;
     // total number of times, 0 means unlimited
     unsigned int totalStep;
+    // delay(ms)
+    unsigned int delay;
     // initial game state
     unsigned int** initialStatus;
     // current game status

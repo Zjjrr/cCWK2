@@ -17,7 +17,7 @@ typedef struct _GameConfig {
     SDL_Rect cellRect; // Abstraction of cell
 } GameConfig;
 
-void load(char* file);
+GameConfig* load(char* file);
 void init();
 void input();
 void update();

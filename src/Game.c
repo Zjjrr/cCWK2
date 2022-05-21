@@ -10,7 +10,8 @@
 static GameConfig* config = NULL;
 extern int errno;
 
-void load(char* file) {
+// load status file
+GameConfig* load(char* file) {
     FILE* fp = NULL;
     Game* game = NULL;
     SDL_Rect* rect = NULL;
@@ -37,7 +38,7 @@ void load(char* file) {
     // init gameRect
     rect = &(config -> gameRect);
     rect -> x= 0;
-    rect -> y = 30;
+    rect -> y = 0;
     rect -> w = (config -> cellRect).w * config -> game -> width;
     rect -> h = (config -> cellRect).h * config -> game -> height;
     // init statusRect
@@ -54,8 +55,10 @@ void load(char* file) {
     rect -> h = (config -> gameRect).h + (config -> statusRect).h;
     
     fclose(fp);
+    return config;
 }
 
+// initialise the game data
 void init() {
     if (!config) {
         fprintf(stderr, "Game_Init: failed to get config file.\n");
@@ -92,8 +95,55 @@ void init() {
     SDL_RenderPresent(renderer);
 }
 
+// read keyboard input
+void input() {
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+    
+    SDL_PumpEvents();
+    
+    // Update key status
+    esc_pressed = state[SDL_SCANCODE_ESCAPE];
+    enter_pressed = state[SDL_SCANCODE_RETURN];
+}
+
+// update game status
+void update() {
+    static int end = 0;
+    Game* game = config -> game;
+    
+    // esc pressed
+    if (esc_pressed)
+        quit();
+    
+    if (!game -> totalStep) {
+        // manual
+        if (enter_pressed) {
+            game -> nextStep(game);
+         fprintf(stdout, "Game: ManualPlay [Current]-[%u]\n", game -> currentStep);
+        }
+    } else if (game -> currentStep < game -> totalStep) {
+        // auto
+        game -> nextStep(game);
+        fprintf(stdout, "Game: AutoPlay [Current/Total]-[%u/%u]\n", game -> currentStep, game -> totalStep);
+    } else if (!end) {
+        fprintf(stdout, "Game: Reach to the end.\n");
+        end = 1;
+    }
+}
+
+void render() {
+    draw_game();
+    SDL_RenderPresent(renderer);
+}
+
+// quit the game
 void quit() {
-    //TODO: implement safe quit function
+    Game* game = config -> game;
+    
+    game -> release(game);
+    free(config);
+    
+    exit(0);
 }
 
 void draw_game() {

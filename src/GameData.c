@@ -9,6 +9,12 @@ static unsigned int _getSize_(Game* game);
 
 static void _nextStep_(Game* game);
 
+static unsigned int** createArray(int l, int r);
+
+static void freeArray(unsigned int** array, int l);
+
+static void copyArray(unsigned int** source, unsigned int** target, int l, int r);
+
 int storeGame(Game* game, FILE* file) {
     cJSON* json_root = NULL;
     cJSON* json_array_initial = NULL;
@@ -27,6 +33,7 @@ int storeGame(Game* game, FILE* file) {
     cJSON_AddNumberToObject(json_root, KEY_HEIGHT, game -> height);
     cJSON_AddNumberToObject(json_root, KEY_CURRENT_STEP, game -> currentStep);
     cJSON_AddNumberToObject(json_root, KEY_TOTAL_STEPS, game -> totalStep);
+    cJSON_AddNumberToObject(json_root, KEY_DELAY, game -> delay);
 
     json_array_initial = cJSON_CreateArray();
     for (int i = 0; i < game -> height; i++) {
@@ -94,11 +101,10 @@ Game* restoreGame(FILE* file) {
     game -> height = (unsigned int) cJSON_GetNumberValue(cJSON_GetObjectItem(json, KEY_HEIGHT));
     game -> currentStep = (unsigned int) cJSON_GetNumberValue(cJSON_GetObjectItem(json, KEY_CURRENT_STEP));
     game -> totalStep = (unsigned int) cJSON_GetNumberValue(cJSON_GetObjectItem(json, KEY_TOTAL_STEPS));
+    game -> delay = (unsigned int) cJSON_GetNumberValue(cJSON_GetObjectItem(json, KEY_DELAY));
     
     array = cJSON_GetObjectItem(json, KEY_INITIAL_STATUS);
-    status = (unsigned int**) malloc(game -> height * sizeof(unsigned int*));
-    for (int i = 0; i < game -> height; i++)
-        *(status + i) = (unsigned int*) malloc(game -> width * sizeof(unsigned int));
+    status = createArray(game -> height, game -> width);
     for (int i = 0; i < game -> height; i++) {
         for (int j = 0; j < game -> width; j++) {
             *(*(status + i) + j) = cJSON_GetNumberValue(cJSON_GetArrayItem(cJSON_GetArrayItem(array, i), j));
@@ -107,7 +113,7 @@ Game* restoreGame(FILE* file) {
     game -> initialStatus = status;
     
     array = cJSON_GetObjectItem(json, KEY_END_STATUS);
-    status = (unsigned int**) malloc(game -> height * sizeof(unsigned int*));
+    status = createArray(game -> height, game -> width);
     for (int i = 0; i < game -> height; i++)
         *(status + i) = (unsigned int*) malloc(game -> width * sizeof(unsigned int));
     for (int i = 0; i < game -> height; i++) {
@@ -130,7 +136,6 @@ Game* restoreGame(FILE* file) {
 
 Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps) {
     Game* game = NULL;
-    unsigned int** tmp = NULL;
     
     if (width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT)
         // parameters are invalid
@@ -140,20 +145,11 @@ Game* createGame(unsigned int width, unsigned int height, unsigned int totalStep
     game = (Game*) malloc(sizeof(Game));
     game -> width = width;
     game -> height = height;
-    game -> currentStep = 0;
+    game -> currentStep = 1;
     game -> totalStep = totalSteps;
-    game -> initialStatus = (unsigned int**) malloc(height * sizeof(unsigned int*));
-    for (int i = 0; i < height; i++) {
-        tmp = (game -> initialStatus) + i;
-        *tmp = (unsigned int*) malloc(width * sizeof(unsigned int));
-        memset(*tmp, 0, width * sizeof(unsigned int));
-    }
-    game -> endStatus = (unsigned int**) malloc(height *sizeof(unsigned int*));
-    for (int i = 0; i < height; i++) {
-        tmp = (game -> endStatus) + i;
-        *tmp = (unsigned int*) malloc(width * sizeof(unsigned int));
-        memset(*tmp, 0, sizeof(unsigned int));
-    }
+    game -> delay = 1000; // 1s
+    game -> initialStatus = createArray(game -> height, game -> width);
+    game -> endStatus = createArray(game -> height, game -> width);
     game -> getSize = _getSize_;
     game -> nextStep = _nextStep_;
     game -> release = detachGame;
@@ -165,12 +161,8 @@ void detachGame(Game* game) {
     if (!game)
         exit(-1);
     
-    for (int i = 0; i < game -> height; i++) {
-        free(*(game -> initialStatus + i));
-        free(*(game -> endStatus + i));
-    }
-    free(game -> initialStatus);
-    free(game -> endStatus);
+    freeArray(game -> initialStatus, game -> height);
+    freeArray(game ->endStatus, game -> height);
     free(game);
 }
 
@@ -181,9 +173,13 @@ static unsigned int _getSize_(Game* game) {
 static void _nextStep_(Game* game) {
     static int delta[] = {-1, 0, 1};
     unsigned int** status = NULL;
+    unsigned int** temp = NULL;
     int alive = 0, x = 0, y = 0;
     
     status = game -> endStatus;
+    temp = createArray(game -> height, game -> width);
+    copyArray(status, temp, game -> height, game -> width);
+    
     for (int i = 0; i < game -> height; i++) {
         for (int j = 0; j < game -> width; j++) {
             alive = 0;
@@ -197,11 +193,40 @@ static void _nextStep_(Game* game) {
                         alive += *(*(status + y) + x);
                 }
             }
+            alive -= *(*(status + i) + j);
             // Change the state of the current cell
             if (alive == 3)
-                *(*(status + i) + j) = (unsigned int) SYMBOL_LIVE;
+                *(*(temp + i) + j) = (unsigned int) SYMBOL_LIVE;
             else if (alive != 2)
-                *(*(status + i) + j) = (unsigned int) SYMBOL_DEAD;
+                *(*(temp + i) + j) = (unsigned int) SYMBOL_DEAD;
         }
+    }
+    freeArray(status, game -> height);
+    game -> endStatus = temp;
+    game -> currentStep ++;
+}
+
+static unsigned int** createArray(int l, int r) {
+    unsigned int** array = NULL;
+    
+    array = (unsigned int**) malloc(l * sizeof(unsigned int*));
+    for (int i = 0; i < l; i++) {
+        *(array + i) = (unsigned int*) malloc(r * sizeof(unsigned int));
+        memset(*(array + i) , 0, r * sizeof(unsigned int));
+    }
+        
+    return array;
+}
+
+static void freeArray(unsigned int** array, int l) {
+    for (int i = 0; i < l; i++)
+        free(*(array + i));
+    free(array);
+}
+
+static void copyArray(unsigned int** source, unsigned int** target, int l, int r) {
+    for (int i = 0; i < l; i++) {
+        for (int j = 0; j < r; j++)
+            *(*(target + i) + j) = *(*(source + i) + j);
     }
 }

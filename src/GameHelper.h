@@ -3,6 +3,9 @@
 
 #include <SDL2/SDL.h>
 
+int esc_pressed;
+int enter_pressed;
+
 typedef enum _CellType {
     ALIVE,
     DEAD
@@ -10,6 +13,7 @@ typedef enum _CellType {
 
 SDL_Window *window = NULL;
 SDL_Renderer* renderer = NULL;
+
 
 void draw_game();
 void draw_girdline();

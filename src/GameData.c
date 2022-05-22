@@ -134,7 +134,7 @@ Game* restoreGame(FILE* file) {
     return game;
 }
 
-Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps) {
+Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps, unsigned int delay) {
     Game* game = NULL;
     
     if (width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT)
@@ -147,7 +147,7 @@ Game* createGame(unsigned int width, unsigned int height, unsigned int totalStep
     game -> height = height;
     game -> currentStep = 1;
     game -> totalStep = totalSteps;
-    game -> delay = 1000; // 1s
+    game -> delay = delay; // 1s
     game -> initialStatus = createArray(game -> height, game -> width);
     game -> endStatus = createArray(game -> height, game -> width);
     game -> getSize = _getSize_;
@@ -177,6 +177,13 @@ static void _nextStep_(Game* game) {
     int alive = 0, x = 0, y = 0;
     
     status = game -> endStatus;
+    if (game -> currentStep == 1)
+        copyArray(game -> initialStatus, status, game -> height, game -> width);
+    else if (game -> currentStep == 0) {
+        copyArray(game -> initialStatus, status, game -> height, game -> width);
+        game -> currentStep ++;
+        return;
+    }
     temp = createArray(game -> height, game -> width);
     copyArray(status, temp, game -> height, game -> width);
     

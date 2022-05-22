@@ -47,7 +47,7 @@ int storeGame(Game* game, FILE* file);
 Game* restoreGame(FILE* file);
 // create a game with parameters, return NULL if failed
 // values other than 0 are valid for width and height
-Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps);
+Game* createGame(unsigned int width, unsigned int height, unsigned int totalSteps, unsigned int delay);
 // release resources that allocated for the game
 void detachGame(Game* game);
 

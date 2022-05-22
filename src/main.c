@@ -51,8 +51,10 @@ static void generateGame(char** argv) {
     fp = fopen(argv[2], "w+");
     if (!storeGame(game, fp))
         fprintf(stdout, "Game: Create status file successfully\n");
-    else
+    else {
         fprintf(stderr, "Game: failed to create status file\n");
+        return;
+    }
     fclose(fp);
     
     load(argv[2]);
